@@ -3,12 +3,35 @@ import { ChatMessage, GroundingSource } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Store last call times (in a real app, use persistent storage)
+let lastCallTimes: number[] = [];
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_CALLS_PER_DAY = 2;
+
 export const sendMessageToGemini = async (
   history: ChatMessage[],
   newMessage: string,
   systemInstruction: string
 ): Promise<{ text: string; sources: GroundingSource[] }> => {
+
+  const now = Date.now();
+
+  // Remove calls older than 24 hours
+  lastCallTimes = lastCallTimes.filter(time => now - time < ONE_DAY_MS);
+
+  // Check rate limit
+  if (lastCallTimes.length >= MAX_CALLS_PER_DAY) {
+    const nextAvailable = new Date(Math.min(...lastCallTimes) + ONE_DAY_MS);
+    return {
+      text: `Rate limit exceeded. You can send another message after ${nextAvailable.toLocaleString()}.`,
+      sources: [],
+    };
+  }
+
   try {
+    // Record this call
+    lastCallTimes.push(now);
+
     // Construct chat history for the model
     const chatHistory = history
       .filter(msg => msg.role !== 'model' || !msg.isThinking)
@@ -21,15 +44,14 @@ export const sendMessageToGemini = async (
       model: 'gemini-2.5-flash',
       config: {
         systemInstruction: systemInstruction,
-        tools: [{ googleSearch: {} }], // Enable Google Search
+        tools: [{ googleSearch: {} }],
       },
       history: chatHistory
     });
 
     const result = await chat.sendMessage({ message: newMessage });
-    
     const responseText = result.text;
-    
+
     // Extract grounding chunks if available
     const groundingChunks = result.candidates?.[0]?.groundingMetadata?.groundingChunks;
     const sources: GroundingSource[] = [];

@@ -23,26 +23,6 @@ const fetchWithProxyFallback = async (url: string) => {
   }
 };
 
-/** Sector name mapping helper (used only for assets if needed) */
-const mapSector = (ctSector: string): keyof EmissionDataPoint | null => {
-  if (!ctSector) return null;
-  const s = ctSector.toLowerCase();
-
-  if (s.includes('power') || s.includes('energy')) return 'Energy';
-  if (s.includes('industry') || s.includes('manufacturing')) return 'Industry';
-  if (s.includes('agri') || s.includes('land') || s.includes('forest'))
-    return 'Agriculture';
-  if (
-    s.includes('transport') ||
-    s.includes('aviation') ||
-    s.includes('shipping')
-  )
-    return 'Transport';
-  if (s.includes('waste')) return 'Waste';
-
-  return null;
-};
-
 /**
  * COUNTRY EMISSIONS API FIX:
  * Returns ONE OBJECT:
