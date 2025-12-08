@@ -1,20 +1,63 @@
+# EcoInsight - Global Emissions Tracker
+
+EcoInsight is a comprehensive dashboard designed to track and visualize global carbon emissions data. It bridges the gap between complex climate data and actionable insights by combining real-time visualization with an AI-powered analyst.
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+## Features
 
-This contains everything you need to run your app locally.
+- **Global Emissions Dashboard**: Visualize emissions data across major sectors (Energy, Industry, Agriculture, Transport, Waste).
+- **AI-Powered Analyst**: Integrated chat interface powered by **Google Gemini 2.5**, capable of analyzing dashboard data and answering complex climate questions with real-time internet access.
+- **Top Assets Tracking**: Monitor high-emission assets and facilities globally.
+- **Interactive Visualizations**: Dynamic charts and graphs built with Recharts for clear data interpretation.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1ytAqeo951Mi7aPOFaHRil9C2e_gxVmgd
+## Tech Stack
 
-## Run Locally
+- **Frontend**: [React](https://react.dev/) (v19) with [Vite](https://vitejs.dev/)
+- **AI Integration**: [Google GenAI SDK](https://www.npmjs.com/package/@google/genai) (Gemini 2.5 Flash)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **Language**: TypeScript
 
-**Prerequisites:**  Node.js
+## Getting Started
 
+Follow these steps to run the application locally.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+
+- **Node.js** (v18 or higher recommended)
+- A **Google Gemini API Key** (Get one [here](https://aistudio.google.com/app/apikey))
+
+### Installation
+
+1.  **Clone the repository** (if applicable) or navigate to the project directory.
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment Variables**:
+    Create a `.env` or `.env.local` file in the root directory and add your Gemini API key:
+    ```env
+    GEMINI_API_KEY=your_api_key_here
+    ```
+
+4.  **Run the Development Server**:
+    ```bash
+    npm run dev
+    ```
+
+5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+- `src/components`: UI components including Dashboard and ChatPanel.
+- `src/services`: API services for fetching emission data and communicating with Gemini.
+- `src/types.ts`: TypeScript definitions for data models.
+
+## License
+
+This project is licensed under the MIT License.
