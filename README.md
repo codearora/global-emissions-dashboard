@@ -2,10 +2,6 @@
 
 EcoInsight is a comprehensive dashboard designed to track and visualize global carbon emissions data. It bridges the gap between complex climate data and actionable insights by combining real-time visualization with an AI-powered analyst.
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 ## Features
 
 - **Global Emissions Dashboard**: Visualize emissions data across major sectors (Energy, Industry, Agriculture, Transport, Waste).
