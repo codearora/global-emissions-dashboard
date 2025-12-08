@@ -1,0 +1,5 @@
+{
+  "name": "EcoInsight: Global Emissions Tracker",
+  "description": "A comprehensive dashboard visualizing global emissions data across industries and sectors, featuring an AI-powered analyst for deep insights and real-time internet queries.",
+  "requestFramePermissions": []
+}
