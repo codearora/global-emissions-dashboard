@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
 import { EmissionDataPoint, SectorStat, Asset, SectorEmissionResponse } from '../types';
 import MetricCard from './MetricCard';
+import EmissionChart from './EmissionChart';
 
 const COLORS = [
   '#3b82f6', // Blue
@@ -23,6 +24,50 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading, onRetry, error }) => {
+  const sectorCategoryMap: Record<string, string> = {
+    "electricity-generation": "Energy",
+    "oil-and-gas-production": "Energy",
+    "oil-and-gas-refining": "Energy",
+    "oil-and-gas-transport": "Energy",
+    "non-residential-onsite-fuel-usage": "Energy",
+
+    "cement": "Industry",
+    "aluminum": "Industry",
+    "iron-and-steel": "Industry",
+    "lime": "Industry",
+    "chemicals": "Industry",
+    "glass": "Industry",
+    "bauxite-mining": "Industry",
+    "coal-mining": "Industry",
+    "copper-mining": "Industry",
+
+    "domestic-aviation": "Transport",
+    "domestic-shipping": "Transport",
+    "international-aviation": "Transport",
+    "international-shipping": "Transport"
+  };
+
+  // Transform sectors.all into chart data
+  const categoryTotals = sectors.all.reduce(
+    (acc: Record<string, number>, s) => {
+      const category = sectorCategoryMap[s.Sector] ?? "Other";
+      acc[category] = (acc[category] || 0) + s.Emissions;
+      return acc;
+    },
+    { Energy: 0, Industry: 0, Transport: 0, Other: 0 }
+  );
+
+  const areaChartData = [
+    {
+      year: "Latest",
+      Energy: categoryTotals.Energy,
+      Industry: categoryTotals.Industry,
+      Transport: categoryTotals.Transport
+    }
+  ];
+
+  // const formatYAxis = (value: number) => `${(value / 1e9).toFixed(1)}B`; // optional formatting
+
   // Calculate total emissions
   const totalEmissions = sectors.all.reduce((sum, s) => sum + s.Emissions, 0);
 
@@ -61,6 +106,55 @@ const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading,
 
   const formatYAxis = (tick: number) => `${tick} Gt`;
 
+  // Map each detailed sector into 5 main sectors
+  const mainSectorMap: Record<string, string> = {
+    // Energy-related
+    "electricity-generation": "Energy",
+    "oil-and-gas-production": "Energy",
+    "oil-and-gas-refining": "Energy",
+    "oil-and-gas-transport": "Energy",
+    "non-residential-onsite-fuel-usage": "Energy",
+
+    // Industry
+    "cement": "Industry",
+    "aluminum": "Industry",
+    "iron-and-steel": "Industry",
+    "chemicals": "Industry",
+    "glass": "Industry",
+
+    // Transport
+    "domestic-aviation": "Transport",
+    "domestic-shipping": "Transport",
+    "international-aviation": "Transport",
+    "international-shipping": "Transport",
+
+    // Mining
+    "bauxite-mining": "Mining",
+    "coal-mining": "Mining",
+    "copper-mining": "Mining",
+
+    // Anything else
+    "default": "Other"
+  };
+
+  // Aggregate emissions
+  const aggregatedData: Record<string, number> = {
+    Energy: 0,
+    Industry: 0,
+    Transport: 0,
+    Mining: 0,
+    Other: 0
+  };
+
+  sectors.all.forEach(s => {
+    const sectorKey = mainSectorMap[s.Sector] || "Other";
+    aggregatedData[sectorKey] += s.Emissions;
+  });
+
+  // Now you can safely use Gt conversion
+  const latestDataGt = Object.fromEntries(
+    Object.entries(aggregatedData).map(([k, v]) => [k, v / 1e9])
+  );
   // Format tonnes to Million Tonnes (Mt) for better readability
   const formatEmissionsMt = (tonnes: number) => {
     return (tonnes / 1000000).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' Mt';
@@ -102,7 +196,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading,
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Emissions Overview (USA)</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Emissions Overview</h1>
           <p className="text-slate-500 mt-2">Real-time analysis of GHG emissions & high-impact assets ({data[0].year}-{latestData.year}).</p>
         </div>
         <div className="flex gap-2">
@@ -118,36 +212,68 @@ const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading,
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title={`Total Emissions (${latestData.year})`}
-          value={totalEmissions.toFixed(2)}
+          title="Total Emissions"
+          value={(totalEmissions / 1e9).toFixed(2)} // convert to Gt
           unit="Gt CO2e"
-          trend={parseFloat(growth.toFixed(1))}
-          trendLabel="vs last year"
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+          trendLabel="" // no trend
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+              </path>
+            </svg>
+          }
         />
-        <MetricCard
-          title="Energy Sector"
-          value={latestData.Energy}
-          unit="Gt"
-          trend={previousData ? parseFloat((((latestData.Energy - previousData.Energy) / previousData.Energy) * 100).toFixed(1)) : 0}
-          trendLabel="YoY Growth"
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>}
-        />
-        <MetricCard
-          title="Transport Sector"
-          value={latestData.Transport}
-          unit="Gt"
-          trend={previousData ? parseFloat((((latestData.Transport - previousData.Transport) / previousData.Transport) * 100).toFixed(1)) : 0}
-          trendLabel="Activity"
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>}
-        />
+
+        {/* Individual sector cards */}
+        {['Energy', 'Industry', 'Transport', 'Mining', 'Other'].map((sector) => {
+          // Find the first matching item in sectors.all for this sector
+          const sectorData = sectors.all.find(s => {
+            // Map original sectors to these 5 categories
+            if (['electricity-generation', 'oil-and-gas-production', 'oil-and-gas-refining', 'oil-and-gas-transport', 'non-residential-onsite-fuel-usage'].includes(s.Sector) && sector === 'Energy') return true;
+            if (['cement', 'aluminum', 'iron-and-steel', 'chemicals', 'glass'].includes(s.Sector) && sector === 'Industry') return true;
+            if (['domestic-aviation', 'domestic-shipping', 'international-aviation', 'international-shipping'].includes(s.Sector) && sector === 'Transport') return true;
+            if (['bauxite-mining', 'coal-mining', 'copper-mining'].includes(s.Sector) && sector === 'Mining') return true;
+            if (!['electricity-generation', 'oil-and-gas-production', 'oil-and-gas-refining', 'oil-and-gas-transport', 'non-residential-onsite-fuel-usage', 'cement', 'aluminum', 'iron-and-steel', 'chemicals', 'glass', 'domestic-aviation', 'domestic-shipping', 'international-aviation', 'international-shipping', 'bauxite-mining', 'coal-mining', 'copper-mining'].includes(s.Sector) && sector === 'Other') return true;
+
+            return false;
+          });
+
+          const value = sectorData ? (sectorData.Emissions / 1e9).toFixed(2) : '0.00'; // convert to Gt
+
+          return (
+            <MetricCard
+              key={sector}
+              title={`${sector} Sector`}
+              value={value}
+              unit="Gt"
+              trendLabel="" // no trend
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z">
+                  </path>
+                </svg>
+              }
+            />
+          );
+        })}
+
+        {/* Assets Tracked */}
         <MetricCard
           title="Assets Tracked"
           value={assets.length}
           unit="Sites"
-          trendLabel="Live Monitoring"
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>}
+          trendLabel=""
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+              </path>
+            </svg>
+          }
         />
+
       </div>
 
       {/* Main Charts Row */}
@@ -155,38 +281,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading,
         {/* Trend Chart (Takes 2 columns) */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">Historical Emissions Trend</h3>
-            <div className="flex gap-2">
-              <span className="text-xs text-slate-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Energy</span>
-              <span className="text-xs text-slate-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-500"></span> Industry</span>
-            </div>
+            <h3 className="text-lg font-semibold text-slate-900">Sectors Emissions Trend</h3>
           </div>
-          <div className="h-[350px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorInd" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="year" stroke="#94a3b8" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis stroke="#94a3b8" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={formatYAxis} />
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  itemStyle={{ color: '#0f172a' }}
-                />
-                <Area type="monotone" dataKey="Energy" stackId="1" stroke="#3b82f6" fill="url(#colorEnergy)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Industry" stackId="1" stroke="#8b5cf6" fill="url(#colorInd)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Transport" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <EmissionChart sectors={sectors} />
         </div>
 
         {/* Breakdown Chart (Takes 1 column) */}
@@ -283,32 +380,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, assets, sectors, isLoading,
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* Comparison Chart (1/3 width) */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">YoY Comparison</h3>
-          <div className="h-[300px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data.slice(-5)} // Last 5 years
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                barGap={4}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="year" stroke="#94a3b8" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis stroke="#94a3b8" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ fill: '#f1f5f9', opacity: 0.8 }}
-                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend formatter={(value) => <span className="text-slate-600">{value}</span>} />
-                <Bar dataKey="Agriculture" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Transport" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Waste" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </div>
       </div>
