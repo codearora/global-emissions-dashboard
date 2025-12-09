@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 // Rate limiting: 2 calls per day
 let lastCallTimes = [];
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const MAX_CALLS_PER_DAY = 2;
+const MAX_CALLS_PER_DAY = 10;
 
 /**
  * Sends a message to Gemini AI
