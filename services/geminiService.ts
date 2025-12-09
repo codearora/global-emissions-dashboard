@@ -10,7 +10,7 @@ export const sendMessageToGemini = async (messages: ChatMessage[], newMessage: s
   };
 
   try {
-    const response = await fetch('http://localhost:3000/api/gemini', {
+    const response = await fetch('https://global-emissions-dashboard.onrender.com/api/gemini', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
